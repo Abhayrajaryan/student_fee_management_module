@@ -1,15 +1,6 @@
 package com.abhay.student_fee_management_module.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -49,4 +40,9 @@ public class FeeRecord {
 
     @OneToMany(mappedBy = "feeRecord", fetch = FetchType.LAZY)
     private List<Payment> payments = new ArrayList<>();
+
+    @PrePersist
+    protected void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 }
