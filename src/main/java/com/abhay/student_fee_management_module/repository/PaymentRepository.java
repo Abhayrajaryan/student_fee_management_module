@@ -11,6 +11,8 @@ import java.util.List;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
+    List<Payment> findByFeeRecordId(Long feeRecordId);
+
     @Query("""
             SELECT COALESCE(SUM(payment.amount), 0)
             FROM Payment payment

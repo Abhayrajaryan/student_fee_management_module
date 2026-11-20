@@ -62,29 +62,25 @@ public class FeeRecordService{
                         "Student not found with ID: " + studentId));
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<FeeRecord> feeRecordPage =
-                feeRecordRepository.findByStudentId(studentId, pageable);
+
+        Page<FeeRecord> feeRecordPage = feeRecordRepository.findByStudentId(studentId, pageable);
         List<FeeRecord> feeRecords = feeRecordPage.getContent();
 
-        List<Long> feeIds = feeRecords.stream()
-                .map(k -> k.getId()).toList();
+        List<Long> feeIds = feeRecords.stream().map(k -> k.getId()).toList();
 
         Map<Long, BigDecimal> totalsPaidByFeeId = new HashMap<>();
 
         if (!feeIds.isEmpty()) {
-            for (FeePaymentTotalProjection row :
-                    paymentRepository.sumAmountsByFeeRecordIds(feeIds)) {
+            for (FeePaymentTotalProjection row : paymentRepository.sumAmountsByFeeRecordIds(feeIds)) {
                 totalsPaidByFeeId.put(row.getFeeId(), row.getTotalPaid());
             }
         }
 
         List<StudentFeeDetailsResponse> responses = new ArrayList<>();
         for (FeeRecord feeRecord : feeRecords) {
-            BigDecimal totalPaid = totalsPaidByFeeId.getOrDefault(
-                    feeRecord.getId(), BigDecimal.ZERO);
+            BigDecimal totalPaid = totalsPaidByFeeId.getOrDefault(feeRecord.getId(), BigDecimal.ZERO);
 
-            BigDecimal outstandingAmount =
-                    feeRecord.getTotalAmount().subtract(totalPaid);
+            BigDecimal outstandingAmount = feeRecord.getTotalAmount().subtract(totalPaid);
 
             responses.add(new StudentFeeDetailsResponse(
                     feeRecord.getId(),

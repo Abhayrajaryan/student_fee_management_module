@@ -1,6 +1,7 @@
 package com.abhay.student_fee_management_module.service;
 
 import com.abhay.student_fee_management_module.dto.request.CreatePaymentRequest;
+import com.abhay.student_fee_management_module.dto.response.PaymentHistoryResponse;
 import com.abhay.student_fee_management_module.dto.response.PaymentResponse;
 import com.abhay.student_fee_management_module.entity.FeeRecord;
 import com.abhay.student_fee_management_module.entity.Payment;
@@ -21,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -195,6 +197,52 @@ class PaymentServiceTest {
         assertTrue(violations.stream()
                 .anyMatch(violation -> violation.getPropertyPath().toString().equals("paidAt")));
         verifyNoInteractions(feeRecordRepository, paymentRepository);
+    }
+
+    @Test
+    void retrievesPaymentHistoryForExistingFeeRecord() {
+        FeeRecord feeRecord = feeRecord(1L, new BigDecimal("25000.00"));
+        Payment payment = new Payment();
+        payment.setId(101L);
+        payment.setAmount(new BigDecimal("10000.00"));
+        payment.setPaymentMethod(PaymentMethod.UPI);
+        payment.setPaidAt(LocalDateTime.of(2026, 11, 20, 21, 30));
+        payment.setFeeRecord(feeRecord);
+
+        when(feeRecordRepository.findById(1L)).thenReturn(Optional.of(feeRecord));
+        when(paymentRepository.findByFeeRecordId(1L)).thenReturn(List.of(payment));
+
+        List<PaymentHistoryResponse> history = paymentService.getPaymentHistory(1L);
+
+        assertEquals(1, history.size());
+        assertEquals(101L, history.get(0).getPaymentId());
+        assertEquals(1L, history.get(0).getFeeId());
+        assertEquals(new BigDecimal("10000.00"), history.get(0).getAmount());
+        assertEquals(PaymentMethod.UPI, history.get(0).getPaymentMethod());
+        assertEquals(payment.getPaidAt(), history.get(0).getPaidAt());
+        verify(paymentRepository).findByFeeRecordId(1L);
+    }
+
+    @Test
+    void returnsEmptyHistoryWhenFeeRecordHasNoPayments() {
+        FeeRecord feeRecord = feeRecord(1L, new BigDecimal("25000.00"));
+        when(feeRecordRepository.findById(1L)).thenReturn(Optional.of(feeRecord));
+        when(paymentRepository.findByFeeRecordId(1L)).thenReturn(List.of());
+
+        List<PaymentHistoryResponse> history = paymentService.getPaymentHistory(1L);
+
+        assertTrue(history.isEmpty());
+        verify(paymentRepository).findByFeeRecordId(1L);
+    }
+
+    @Test
+    void throwsNotFoundForInvalidFeeIdWhenRetrievingPaymentHistory() {
+        when(feeRecordRepository.findById(0L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> paymentService.getPaymentHistory(0L));
+
+        verify(paymentRepository, never()).findByFeeRecordId(any());
     }
 
     private FeeRecord feeRecord(Long id, BigDecimal totalAmount) {

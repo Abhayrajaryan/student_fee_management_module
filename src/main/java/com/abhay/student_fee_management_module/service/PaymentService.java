@@ -1,6 +1,7 @@
 package com.abhay.student_fee_management_module.service;
 
 import com.abhay.student_fee_management_module.dto.request.CreatePaymentRequest;
+import com.abhay.student_fee_management_module.dto.response.PaymentHistoryResponse;
 import com.abhay.student_fee_management_module.dto.response.PaymentResponse;
 import com.abhay.student_fee_management_module.entity.FeeRecord;
 import com.abhay.student_fee_management_module.entity.Payment;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -51,5 +54,21 @@ public class PaymentService {
                 savedPayment.getAmount(),
                 savedPayment.getPaymentMethod(),
                 savedPayment.getPaidAt());
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentHistoryResponse> getPaymentHistory(Long feeId) {
+        feeRecordRepository.findById(feeId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Fee record not found with ID: " + feeId));
+
+        return paymentRepository.findByFeeRecordId(feeId).stream()
+                .map(payment -> new PaymentHistoryResponse(
+                        payment.getId(),
+                        feeId,
+                        payment.getAmount(),
+                        payment.getPaymentMethod(),
+                        payment.getPaidAt()))
+                .toList();
     }
 }
