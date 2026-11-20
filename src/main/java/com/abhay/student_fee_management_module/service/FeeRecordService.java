@@ -6,12 +6,16 @@ import com.abhay.student_fee_management_module.dto.response.PendingFeeResponse;
 import com.abhay.student_fee_management_module.dto.response.StudentFeeDetailsResponse;
 import com.abhay.student_fee_management_module.dto.response.PagedResponse;
 import com.abhay.student_fee_management_module.dto.response.PendingStudentResponse;
+import com.abhay.student_fee_management_module.dto.response.SchoolFeeSummaryResponse;
 import com.abhay.student_fee_management_module.entity.FeeRecord;
+import com.abhay.student_fee_management_module.entity.School;
 import com.abhay.student_fee_management_module.entity.Student;
 import com.abhay.student_fee_management_module.exception.ResourceNotFoundException;
 import com.abhay.student_fee_management_module.projections.FeeProjection;
+import com.abhay.student_fee_management_module.projections.SchoolFeeStatsProjection;
 import com.abhay.student_fee_management_module.repository.FeeRecordRepository;
 import com.abhay.student_fee_management_module.repository.PaymentRepository;
+import com.abhay.student_fee_management_module.repository.SchoolRepository;
 import com.abhay.student_fee_management_module.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,6 +37,7 @@ public class FeeRecordService{
     private final FeeRecordRepository feeRecordRepository;
     private final StudentRepository studentRepository;
     private final PaymentRepository paymentRepository;
+    private final SchoolRepository schoolRepository;
 
     @Transactional
     public FeeRecordResponse createFeeRecord(CreateFeeRecordRequest request) {
@@ -141,5 +146,27 @@ public class FeeRecordService{
                 pendingStudents.getTotalElements(),
                 pendingStudents.getTotalPages(),
                 pendingStudents.isLast());
+    }
+
+    @Transactional(readOnly = true)
+    public SchoolFeeSummaryResponse getSchoolFeeSummary(Long schoolId) {
+
+        School school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "School not found with ID: " + schoolId));
+
+        SchoolFeeStatsProjection feeStats = feeRecordRepository.getSchoolFeeStats(schoolId);
+        BigDecimal totalCollected = paymentRepository.sumCollectedBySchoolId(schoolId);
+        BigDecimal totalOutstanding = feeStats.getTotalFees().subtract(totalCollected);
+
+        return new SchoolFeeSummaryResponse(
+                school.getId(),
+                school.getName(),
+                feeStats.getTotalFees(),
+                totalCollected,
+                totalOutstanding,
+                feeStats.getTotalFeeRecords(),
+                feeStats.getFullyPaidRecords(),
+                feeStats.getPendingRecords());
     }
 }

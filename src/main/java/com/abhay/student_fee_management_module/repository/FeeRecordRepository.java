@@ -2,6 +2,7 @@ package com.abhay.student_fee_management_module.repository;
 
 import com.abhay.student_fee_management_module.entity.FeeRecord;
 import com.abhay.student_fee_management_module.projections.FeeProjection;
+import com.abhay.student_fee_management_module.projections.SchoolFeeStatsProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,4 +42,15 @@ public interface FeeRecordRepository extends JpaRepository<FeeRecord, Long> {
             GROUP BY fee.id, fee.title, fee.totalAmount, fee.dueDate
             """)
     List<FeeProjection> findPendingFeesByStudentId(@Param("studentId") Long studentId);
+
+    @Query("""
+            SELECT COALESCE(SUM(fee.totalAmount), 0) AS totalFees,
+                   COUNT(fee.id) AS totalFeeRecords,
+                   COUNT(CASE WHEN fee.fullyPaid = true THEN 1 END) AS fullyPaidRecords,
+                   COUNT(CASE WHEN fee.fullyPaid = false THEN 1 END) AS pendingRecords
+            FROM FeeRecord fee
+            WHERE fee.student.school.id = :schoolId
+            """)
+    SchoolFeeStatsProjection getSchoolFeeStats(@Param("schoolId") Long schoolId);
+
 }

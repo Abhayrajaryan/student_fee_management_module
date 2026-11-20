@@ -10,6 +10,7 @@ import com.abhay.student_fee_management_module.exception.ResourceNotFoundExcepti
 import com.abhay.student_fee_management_module.projections.FeeProjection;
 import com.abhay.student_fee_management_module.repository.FeeRecordRepository;
 import com.abhay.student_fee_management_module.repository.PaymentRepository;
+import com.abhay.student_fee_management_module.repository.SchoolRepository;
 import com.abhay.student_fee_management_module.repository.StudentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,12 +42,15 @@ class FeeRecordServiceTest {
     @Mock
     private PaymentRepository paymentRepository;
 
+    @Mock
+    private SchoolRepository schoolRepository;
+
     private FeeRecordService feeRecordService;
 
     @BeforeEach
     void setUp() {
         feeRecordService = new FeeRecordService(
-                feeRecordRepository, studentRepository, paymentRepository);
+                feeRecordRepository, studentRepository, paymentRepository, schoolRepository);
     }
 
     @Test

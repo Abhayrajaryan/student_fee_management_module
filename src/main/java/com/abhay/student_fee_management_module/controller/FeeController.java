@@ -4,6 +4,7 @@ import com.abhay.student_fee_management_module.dto.request.CreateFeeRecordReques
 import com.abhay.student_fee_management_module.dto.response.ApiResponse;
 import com.abhay.student_fee_management_module.dto.response.FeeRecordResponse;
 import com.abhay.student_fee_management_module.dto.response.StudentFeeDetailsResponse;
+import com.abhay.student_fee_management_module.dto.response.SchoolFeeSummaryResponse;
 import com.abhay.student_fee_management_module.service.FeeRecordService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.constraints.Max;
@@ -24,14 +24,13 @@ import com.abhay.student_fee_management_module.dto.response.PagedResponse;
 import com.abhay.student_fee_management_module.dto.response.PendingStudentResponse;
 
 @RestController
-@RequestMapping("/fees")
 @RequiredArgsConstructor
 @Validated
 public class FeeController {
 
     private final FeeRecordService feeRecordService;
 
-    @PostMapping("/create")
+    @PostMapping("/fees/create")
     public ResponseEntity<ApiResponse<FeeRecordResponse>> createFeeRecord(
             @Valid @RequestBody CreateFeeRecordRequest request) {
         FeeRecordResponse response = feeRecordService.createFeeRecord(request);
@@ -42,7 +41,7 @@ public class FeeController {
                         response));
     }
 
-    @GetMapping("/students/{studentId}")
+    @GetMapping("/fees/students/{studentId}")
     public ResponseEntity<ApiResponse<PagedResponse<StudentFeeDetailsResponse>>> getStudentFees(
             @PathVariable Long studentId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -56,7 +55,7 @@ public class FeeController {
                 fees));
     }
 
-    @GetMapping("/pending")
+    @GetMapping("/fees/pending")
     public ResponseEntity<ApiResponse<PagedResponse<PendingStudentResponse>>> getPendingStudents(
             @RequestParam(required = false) Long schoolId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -68,5 +67,17 @@ public class FeeController {
                 HttpStatus.OK.value(),
                 "Pending fee students retrieved successfully",
                 students));
+    }
+
+    @GetMapping("/schools-fee-summary/{schoolId}")
+    public ResponseEntity<ApiResponse<SchoolFeeSummaryResponse>> getSchoolFeeSummary(
+            @PathVariable Long schoolId) {
+
+        SchoolFeeSummaryResponse summary = feeRecordService.getSchoolFeeSummary(schoolId);
+
+        return ResponseEntity.ok(ApiResponse.of(
+                HttpStatus.OK.value(),
+                "School fee summary retrieved successfully",
+                summary));
     }
 }

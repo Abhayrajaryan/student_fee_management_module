@@ -20,4 +20,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             """)
     BigDecimal sumAmountByFeeRecordId(@Param("feeRecordId") Long feeRecordId);
 
+    @Query("""
+            SELECT COALESCE(SUM(payment.amount), 0)
+            FROM Payment payment
+            WHERE payment.feeRecord.student.school.id = :schoolId
+            """)
+    BigDecimal sumCollectedBySchoolId(@Param("schoolId") Long schoolId);
+
 }
