@@ -68,7 +68,9 @@ class PaymentServiceTest {
         assertEquals(new BigDecimal("25000.00"), response.getAmount());
         assertEquals(PaymentMethod.UPI, response.getPaymentMethod());
         assertEquals(request.getPaidAt(), response.getPaidAt());
+        assertTrue(feeRecord.isFullyPaid());
         verify(paymentRepository).save(any(Payment.class));
+        verify(feeRecordRepository).save(feeRecord);
     }
 
     @Test
@@ -87,7 +89,9 @@ class PaymentServiceTest {
         PaymentResponse response = paymentService.recordPayment(request);
 
         assertEquals(new BigDecimal("10000.00"), response.getAmount());
+        assertFalse(feeRecord.isFullyPaid());
         verify(paymentRepository).save(any(Payment.class));
+        verify(feeRecordRepository).save(feeRecord);
     }
 
     @Test
@@ -110,6 +114,7 @@ class PaymentServiceTest {
         PaymentResponse settledResponse = paymentService.recordPayment(secondRequest);
 
         assertEquals(new BigDecimal("20000.00"), settledResponse.getAmount());
+        assertTrue(feeRecord.isFullyPaid());
         verify(paymentRepository, times(2)).save(any(Payment.class));
     }
 
@@ -138,6 +143,8 @@ class PaymentServiceTest {
         assertThrows(PaymentExceedsOutstandingException.class,
                 () -> paymentService.recordPayment(request));
         verify(paymentRepository, never()).save(any(Payment.class));
+        verify(feeRecordRepository, never()).save(any(FeeRecord.class));
+        assertFalse(feeRecord.isFullyPaid());
     }
 
     @Test
@@ -157,7 +164,9 @@ class PaymentServiceTest {
         PaymentResponse response = paymentService.recordPayment(request);
 
         assertEquals(new BigDecimal("15000.00"), response.getAmount());
+        assertTrue(feeRecord.isFullyPaid());
         verify(paymentRepository).save(any(Payment.class));
+        verify(feeRecordRepository).save(feeRecord);
     }
 
     @Test
@@ -178,6 +187,8 @@ class PaymentServiceTest {
         ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
         verify(paymentRepository).save(captor.capture());
         assertEquals(feeRecord, captor.getValue().getFeeRecord());
+        assertTrue(feeRecord.isFullyPaid());
+        verify(feeRecordRepository).save(feeRecord);
     }
 
     @Test

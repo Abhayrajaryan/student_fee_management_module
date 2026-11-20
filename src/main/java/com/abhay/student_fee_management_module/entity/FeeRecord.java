@@ -29,6 +29,9 @@ public class FeeRecord {
     private BigDecimal totalAmount;
 
     @Column(nullable = false)
+    private boolean fullyPaid = false;
+
+    @Column(nullable = false)
     private LocalDate dueDate;
 
     @Column(nullable = false)

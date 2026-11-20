@@ -15,5 +15,6 @@ public class FeeRecordResponse {
     private final String title;
     private final BigDecimal totalAmount;
     private final LocalDate dueDate;
+    private final boolean fullyPaid;
 
 }

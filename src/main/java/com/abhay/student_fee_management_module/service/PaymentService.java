@@ -48,6 +48,11 @@ public class PaymentService {
         payment.setFeeRecord(feeRecord);
 
         Payment savedPayment = paymentRepository.save(payment);
+
+        BigDecimal cumulativePaid = totalPaid.add(request.getAmount());
+        feeRecord.setFullyPaid(cumulativePaid.compareTo(feeRecord.getTotalAmount()) == 0);
+        feeRecordRepository.save(feeRecord);
+
         return new PaymentResponse(
                 savedPayment.getId(),
                 feeRecord.getId(),

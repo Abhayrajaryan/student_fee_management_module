@@ -21,6 +21,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 import com.abhay.student_fee_management_module.dto.response.PagedResponse;
+import com.abhay.student_fee_management_module.dto.response.PendingStudentResponse;
 
 @RestController
 @RequestMapping("/fees")
@@ -53,5 +54,19 @@ public class FeeController {
                 HttpStatus.OK.value(),
                 "Student fee details retrieved successfully",
                 fees));
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<ApiResponse<PagedResponse<PendingStudentResponse>>> getPendingStudents(
+            @RequestParam(required = false) Long schoolId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+
+        PagedResponse<PendingStudentResponse> students = feeRecordService.getPendingStudents(schoolId, page, size);
+
+        return ResponseEntity.ok(ApiResponse.of(
+                HttpStatus.OK.value(),
+                "Pending fee students retrieved successfully",
+                students));
     }
 }

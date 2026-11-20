@@ -7,7 +7,7 @@ import com.abhay.student_fee_management_module.dto.response.StudentFeeDetailsRes
 import com.abhay.student_fee_management_module.entity.FeeRecord;
 import com.abhay.student_fee_management_module.entity.Student;
 import com.abhay.student_fee_management_module.exception.ResourceNotFoundException;
-import com.abhay.student_fee_management_module.projections.FeePaymentTotalProjection;
+import com.abhay.student_fee_management_module.projections.FeeProjection;
 import com.abhay.student_fee_management_module.repository.FeeRecordRepository;
 import com.abhay.student_fee_management_module.repository.PaymentRepository;
 import com.abhay.student_fee_management_module.repository.StudentRepository;
@@ -22,7 +22,6 @@ import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,6 +71,7 @@ class FeeRecordServiceTest {
         assertSame(student, saved.getStudent());
         assertEquals("Term 1 Tuition Fee", saved.getTitle());
         assertEquals(new BigDecimal("25000.00"), saved.getTotalAmount());
+        assertFalse(saved.isFullyPaid());
         assertEquals(LocalDate.of(2026, 12, 15), saved.getDueDate());
         assertEquals(101L, response.getId());
         assertEquals(15L, response.getStudentId());
@@ -105,7 +105,7 @@ class FeeRecordServiceTest {
         assertEquals(0, fees.getTotalElements());
         assertEquals(0, fees.getTotalPages());
         assertTrue(fees.isLast());
-        verify(paymentRepository, never()).sumAmountsByFeeRecordIds(any());
+        verify(feeRecordRepository, never()).sumAmountsByFeeRecordIds(any());
     }
 
     @Test
@@ -142,14 +142,14 @@ class FeeRecordServiceTest {
                         PageRequest.of(0, 10),
                         2));
 
-        FeePaymentTotalProjection projection = mock(FeePaymentTotalProjection.class);
+        FeeProjection projection = mock(FeeProjection.class);
 
         when(projection.getFeeId()).thenReturn(101L);
-        when(projection.getTotalPaid()).thenReturn(new BigDecimal("10000.00"));
+        when(projection.getPaidAmount()).thenReturn(new BigDecimal("10000.00"));
 
-        List<FeePaymentTotalProjection> paymentTotals = List.of(projection);
+        List<FeeProjection> paymentTotals = List.of(projection);
 
-        when(paymentRepository.sumAmountsByFeeRecordIds(List.of(101L, 102L)))
+        when(feeRecordRepository.sumAmountsByFeeRecordIds(List.of(101L, 102L)))
                 .thenReturn(paymentTotals);
 
         PagedResponse<StudentFeeDetailsResponse> fees =

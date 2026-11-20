@@ -2,12 +2,14 @@ package com.abhay.student_fee_management_module.service;
 
 import com.abhay.student_fee_management_module.dto.request.CreateFeeRecordRequest;
 import com.abhay.student_fee_management_module.dto.response.FeeRecordResponse;
+import com.abhay.student_fee_management_module.dto.response.PendingFeeResponse;
 import com.abhay.student_fee_management_module.dto.response.StudentFeeDetailsResponse;
 import com.abhay.student_fee_management_module.dto.response.PagedResponse;
+import com.abhay.student_fee_management_module.dto.response.PendingStudentResponse;
 import com.abhay.student_fee_management_module.entity.FeeRecord;
 import com.abhay.student_fee_management_module.entity.Student;
 import com.abhay.student_fee_management_module.exception.ResourceNotFoundException;
-import com.abhay.student_fee_management_module.projections.FeePaymentTotalProjection;
+import com.abhay.student_fee_management_module.projections.FeeProjection;
 import com.abhay.student_fee_management_module.repository.FeeRecordRepository;
 import com.abhay.student_fee_management_module.repository.PaymentRepository;
 import com.abhay.student_fee_management_module.repository.StudentRepository;
@@ -51,7 +53,8 @@ public class FeeRecordService{
                 student.getId(),
                 savedFeeRecord.getTitle(),
                 savedFeeRecord.getTotalAmount(),
-                savedFeeRecord.getDueDate());
+                savedFeeRecord.getDueDate(),
+                savedFeeRecord.isFullyPaid());
     }
 
     @Transactional(readOnly = true)
@@ -71,8 +74,8 @@ public class FeeRecordService{
         Map<Long, BigDecimal> totalsPaidByFeeId = new HashMap<>();
 
         if (!feeIds.isEmpty()) {
-            for (FeePaymentTotalProjection row : paymentRepository.sumAmountsByFeeRecordIds(feeIds)) {
-                totalsPaidByFeeId.put(row.getFeeId(), row.getTotalPaid());
+            for (FeeProjection row : feeRecordRepository.sumAmountsByFeeRecordIds(feeIds)) {
+                totalsPaidByFeeId.put(row.getFeeId(), row.getPaidAmount());
             }
         }
 
@@ -87,6 +90,7 @@ public class FeeRecordService{
                     feeRecord.getTitle(),
                     feeRecord.getTotalAmount(),
                     feeRecord.getDueDate(),
+                    feeRecord.isFullyPaid(),
                     totalPaid,
                     outstandingAmount));
         }
@@ -97,5 +101,45 @@ public class FeeRecordService{
                 feeRecordPage.getTotalElements(),
                 feeRecordPage.getTotalPages(),
                 feeRecordPage.isLast());
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<PendingStudentResponse> getPendingStudents(Long schoolId, int page, int size) {
+
+        Page<Student> pendingStudents = studentRepository.findStudentsWithUnpaidFees(
+                schoolId, PageRequest.of(page, size));
+
+        List<PendingStudentResponse> responses = new ArrayList<>();
+
+        for (Student student : pendingStudents.getContent()) {
+            List<FeeProjection> feeProjections = feeRecordRepository.findPendingFeesByStudentId(student.getId());
+
+            List<PendingFeeResponse> pendingFees = new ArrayList<>();
+
+            for (FeeProjection fee : feeProjections) {
+                pendingFees.add(new PendingFeeResponse(
+                        fee.getFeeId(),
+                        fee.getFeeTitle(),
+                        fee.getTotalAmount(),
+                        fee.getPaidAmount(),
+                        fee.getOutstandingAmount(),
+                        fee.getDueDate()));
+            }
+
+            responses.add(new PendingStudentResponse(
+                    student.getId(),
+                    student.getName(),
+                    student.getSchool().getId(),
+                    student.getSchool().getName(),
+                    pendingFees));
+        }
+
+        return new PagedResponse<>(
+                responses,
+                pendingStudents.getNumber(),
+                pendingStudents.getSize(),
+                pendingStudents.getTotalElements(),
+                pendingStudents.getTotalPages(),
+                pendingStudents.isLast());
     }
 }
