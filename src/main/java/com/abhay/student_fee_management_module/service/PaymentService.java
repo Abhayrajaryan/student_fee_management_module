@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -43,7 +41,7 @@ public class PaymentService {
         Payment payment = new Payment();
         payment.setAmount(request.getAmount());
         payment.setPaymentMethod(request.getPaymentMethod());
-        payment.setPaidAt(LocalDateTime.now());
+        payment.setPaidAt(request.getPaidAt());
         payment.setFeeRecord(feeRecord);
 
         Payment savedPayment = paymentRepository.save(payment);

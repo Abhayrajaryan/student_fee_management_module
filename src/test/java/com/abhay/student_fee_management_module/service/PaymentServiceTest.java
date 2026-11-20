@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -64,6 +65,7 @@ class PaymentServiceTest {
         assertEquals(1L, response.getFeeRecordId());
         assertEquals(new BigDecimal("25000.00"), response.getAmount());
         assertEquals(PaymentMethod.UPI, response.getPaymentMethod());
+        assertEquals(request.getPaidAt(), response.getPaidAt());
         verify(paymentRepository).save(any(Payment.class));
     }
 
@@ -190,6 +192,8 @@ class PaymentServiceTest {
                 .anyMatch(violation -> violation.getPropertyPath().toString().equals("amount")));
         assertTrue(violations.stream()
                 .anyMatch(violation -> violation.getPropertyPath().toString().equals("paymentMethod")));
+        assertTrue(violations.stream()
+                .anyMatch(violation -> violation.getPropertyPath().toString().equals("paidAt")));
         verifyNoInteractions(feeRecordRepository, paymentRepository);
     }
 
@@ -210,6 +214,7 @@ class PaymentServiceTest {
         request.setFeeId(feeId);
         request.setAmount(amount);
         request.setPaymentMethod(paymentMethod);
+        request.setPaidAt(LocalDateTime.of(2026, 11, 20, 21, 30));
         return request;
     }
 }
